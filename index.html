@@ -4,7 +4,7 @@
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<title></title>
-		<link href="/output.css" rel="stylesheet">
+		<link href="/static/output.css" rel="stylesheet">
 		<link rel="preconnect" href="https://fonts.googleapis.com">
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 		<link href="https://fonts.googleapis.com/css2?family=Grenze+Gotisch&display=swap" rel="stylesheet">
@@ -33,14 +33,20 @@
 					<button class="rounded-lg border border-black px-4 py-1" type="submit">ADD</button>
 				</form>
 				<h2 class="mt-8 mb-5 text-2xl underline">Listening:</h2>
-				<ul>
-					
+				<ul class="list-disc">
+					{{range .Servers}}
+					<li class="list-item">
+						<div class="flex gap-4">
+							{{.}}
+							<img class="cursor-pointer max-w-6 max-h-6" src="static/trash.svg" alt="Trash can">	
+						</div>
+					</li>
+					{{end}}
 				</ul>
 			</div>
 			<div>
 				<h2 class="text-2xl underline">Incoming Feed</h2>
 				<ul>
-
 				</ul>
 			</div>
 		</div>

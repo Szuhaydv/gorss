@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/xml"
 	"fmt"
+	"html/template"
 	"io"
 	"net/http"
 )
@@ -40,16 +41,31 @@ func printFeed(feed Feed) {
 }
 
 func handlerFunc(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html")
+	tmpl, err := template.ParseFiles("index.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	data := RSSReader{
+		Servers: []string{"https://www.idk.com"},
+		Items:   []Item{},
+	}
+	err = tmpl.Execute(w, data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
 
-	http.ServeFile(w, r, "index.html")
+type RSSReader struct {
+	Servers []string
+	Items   []Item
 }
 
 func main() {
 	baseUrl := "https://lorem-rss.herokuapp.com/feed?unit=second&interval=30"
 
 	router := http.NewServeMux()
-	router.Handle("/output.css", http.FileServer(http.Dir("./")))
+	router.Handle("/static/", http.StripPrefix("/static", http.FileServer(http.Dir("./static"))))
 	router.HandleFunc("/", handlerFunc)
 
 	server := http.Server{
