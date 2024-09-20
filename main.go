@@ -25,42 +25,59 @@ type Item struct {
 }
 
 func printFeed(feed Feed) {
-    fmt.Println("Title:", feed.Channel.Title)
-    fmt.Println("Description:", feed.Channel.Description)
-    fmt.Println()
-    fmt.Println("Items:")
-    fmt.Println("----------------------")
-    for i, item := range feed.Channel.Item {
-        fmt.Printf("Item %d:\n", i+1)
-        fmt.Println("  Title:", item.Title)
-        fmt.Println("  Description:", item.Description)
-        fmt.Println("  Link:", item.Link)
-        fmt.Println()
-    }
+	fmt.Println("Title:", feed.Channel.Title)
+	fmt.Println("Description:", feed.Channel.Description)
+	fmt.Println()
+	fmt.Println("Items:")
+	fmt.Println("----------------------")
+	for i, item := range feed.Channel.Item {
+		fmt.Printf("Item %d:\n", i+1)
+		fmt.Println("  Title:", item.Title)
+		fmt.Println("  Description:", item.Description)
+		fmt.Println("  Link:", item.Link)
+		fmt.Println()
+	}
+}
+
+func handlerFunc(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
+
+	http.ServeFile(w, r, "index.html")
 }
 
 func main() {
-  baseUrl := "https://lorem-rss.herokuapp.com/feed?unit=second&interval=30"
+	baseUrl := "https://lorem-rss.herokuapp.com/feed?unit=second&interval=30"
 
-  // GET the RSS feed (in this case Lorem RSS)
-  resp, err := http.Get(baseUrl); 
-  if err != nil {
-    fmt.Println("Error getting site", baseUrl)
-  }
-  defer resp.Body.Close()
+	router := http.NewServeMux()
+	router.Handle("/output.css", http.FileServer(http.Dir("./")))
+	router.HandleFunc("/", handlerFunc)
 
-  // Read response body into memory
-  body, err := io.ReadAll(resp.Body)
-  if err != nil {
-    fmt.Println("Error reading response body")
-  }
+	server := http.Server{
+		Addr:    ":8081",
+		Handler: router,
+	}
+	fmt.Println("Server listening...")
+	server.ListenAndServe()
 
-  // parse the RSS
-  var feed Feed
-  if err := xml.Unmarshal(body, &feed); err != nil {
-    fmt.Println("Failed to parse RSS feed")
-  }
+	// GET the RSS feed (in this case Lorem RSS)
+	resp, err := http.Get(baseUrl)
+	if err != nil {
+		fmt.Println("Error getting site", baseUrl)
+	}
+	defer resp.Body.Close()
 
-  printFeed(feed)
-  
+	// Read response body into memory
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("Error reading response body")
+	}
+
+	// parse the RSS
+	var feed Feed
+	if err := xml.Unmarshal(body, &feed); err != nil {
+		fmt.Println("Failed to parse RSS feed")
+	}
+
+	printFeed(feed)
+
 }
