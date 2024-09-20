@@ -4,7 +4,11 @@ module.exports = {
     './index.html',
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        'grenze': ['Grenze Gotisch', 'sans-serif'],
+      },
+    },
   },
   plugins: [],
 }
