@@ -8,5 +8,33 @@
 	</head>
 	<body>
 		<h1 class="text-2xl text-center">RSS Reader</h1>
+		<fieldset>
+			<legend>Choose your connection type</legend>
+			
+			<input id="choice1" type="radio" name="connection" value="polling">
+			<label for="choice1">Polling</label>
+
+			<input type="radio" name="connection" value="sse">
+			<label for="choice2">SSE</label>
+
+			<input type="radio" name="connection" value="websocket">
+			<label for="choice3">Websocket</label>
+		</fieldset>
+		<div>
+			<form>
+				<input type="text" placeholder="Enter an RSS feeed's url">
+				<button type="submit">ADD</button>
+			</form>
+			<h2>Listening:</h2>
+			<ul>
+				
+			</ul>
+		</div>
+		<div>
+			<h2>Incoming Feed</h2>
+			<ul>
+
+			</ul>
+		</div>
 	</body>
 </html>
