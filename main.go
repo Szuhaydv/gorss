@@ -3,26 +3,22 @@ package main
 import (
 	"encoding/xml"
 	"fmt"
+	"github.com/google/uuid"
 	"html/template"
 	"io"
 	"net/http"
 )
 
-type Feed struct {
-	XMLName xml.Name `xml:"rss"`
-	Channel Channel  `xml:"channel"`
+type RSSFeed struct {
+	Items []RSSItem `xml:"channel>item"`
+	Link  string
+	ID    uuid.UUID
 }
 
-type Channel struct {
-	Title       string `xml:"title"`
-	Description string `xml:"description"`
-	Item        []Item `xml:"item"`
-}
-
-type Item struct {
-	Title       string `xml:"title"`
-	Description string `xml:"description"`
-	Link        string `xml:"link"`
+type RSSItem struct {
+	Title   string `xml:"title"`
+	Link    string `xml:"link"`
+	PubDate string `xml:"pubDate"`
 }
 
 func handlerFunc(w http.ResponseWriter, r *http.Request) {
@@ -31,42 +27,53 @@ func handlerFunc(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	err = tmpl.Execute(w, exampleServers)
+	err = tmpl.Execute(w, myRSSReader.Feeds)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
 func handleDelete(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(""))
+	requestedID, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, "Unable to parse form", http.StatusBadRequest)
+		return
+	}
+	index := -1
+	for i, v := range myRSSReader.Feeds {
+		if v.ID == requestedID {
+			index = i
+			break
+		}
+	}
+	if index != -1 {
+		myRSSReader.Feeds = append(myRSSReader.Feeds[:index], myRSSReader.Feeds[index+1:]...)
+	}
 }
 
 func handleAdd(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Unable to parse form", http.StatusBadRequest)
+		return
+	}
 	tmpl, err := template.ParseFiles("li.html")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Unable to parse form", http.StatusBadRequest)
-		return
-	}
-	err = tmpl.Execute(w, r.FormValue("inputField"))
+	err = tmpl.Execute(w, RSSFeed{Link: r.FormValue("inputField"), ID: uuid.New()})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+	myRSSReader.Feeds = append(myRSSReader.Feeds, RSSFeed{Link: r.FormValue("inputField"), ID: uuid.New()})
 }
 
 type RSSReader struct {
-	Servers []string
-	Items   []Item
+	Feeds []RSSFeed
 }
 
-var exampleServers = RSSReader{
-	Servers: []string{"https://www.idk.com", "https://www.classfm.com"},
-	Items:   []Item{},
-}
+var myRSSReader = RSSReader{}
 
 func main() {
 	baseUrl := "https://lorem-rss.herokuapp.com/feed?unit=second&interval=30"
@@ -74,7 +81,8 @@ func main() {
 	router := http.NewServeMux()
 	router.Handle("/static/", http.StripPrefix("/static", http.FileServer(http.Dir("./static"))))
 	router.HandleFunc("/", handlerFunc)
-	router.HandleFunc("/addServer", handleAdd)
+	router.HandleFunc("/addFeed", handleAdd)
+	router.HandleFunc("/deleteFeed/{id}", handleDelete)
 	server := http.Server{
 		Addr:    ":8081",
 		Handler: router,
@@ -96,8 +104,9 @@ func main() {
 	}
 
 	// parse the RSS
-	var feed Feed
+	var feed RSSFeed
 	if err := xml.Unmarshal(body, &feed); err != nil {
 		fmt.Println("Failed to parse RSS feed")
 	}
+	fmt.Println(feed)
 }

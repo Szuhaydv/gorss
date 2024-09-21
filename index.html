@@ -29,17 +29,17 @@
 		</fieldset>
 		<div class="flex justify-evenly pt-8">
 			<div>
-				<form hx-post="/addServer" hx-target="next ul" hx-swap="beforeend" hx-on--after-request="this.reset()">
+				<form hx-post="/addFeed" hx-target="next ul" hx-swap="beforeend" hx-on--after-request="this.reset()">
 					<input class="rounded-lg border border-black min-w-80 drop-shadow px-2 py-1 mr-2" type="text" placeholder="Enter an RSS feeed's url" name="inputField">
 					<button class="rounded-lg border border-black px-4 py-1" type="submit">ADD</button>
 				</form>
 				<h2 class="mt-8 mb-5 text-2xl underline">Listening:</h2>
 				<ul class="list-disc flex flex-col gap-4">
-					{{range .Servers}}
+					{{range .}}
 					<li class="list-item">
 						<div class="flex gap-4">
-							{{.}}
-							<img class="cursor-pointer max-w-6 max-h-6" src="static/trash.svg" alt="Trash can">	
+							{{.Link}}
+							<img hx-delete="/deleteFeed/{{.ID}}" hx-trigger="click" hx-swap="outerHTML" hx-target="closest li" class="cursor-pointer max-w-6 max-h-6" src="static/trash.svg" alt="Trash can">	
 						</div>
 					</li>
 					{{end}}
