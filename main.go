@@ -79,7 +79,9 @@ type RSSReader struct {
 	Feeds []RSSFeed
 }
 
-var myRSSReader = RSSReader{}
+var sampleURL, err = url.Parse("https://www.test.com")
+
+var myRSSReader = RSSReader{Feeds: []RSSFeed{{Link: sampleURL, Items: []RSSItem{{Title: "Something cool is happenning", PubDate: "2024-01-29"}}}}}
 
 func main() {
 	baseUrl := "https://lorem-rss.herokuapp.com/feed?unit=second&interval=30"
