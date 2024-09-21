@@ -30,7 +30,7 @@
 			</fieldset>
 			<div class="flex justify-evenly pt-8">
 				<div>
-					<form hx-post="/addFeed" hx-target="next ul" hx-swap="beforeend" hx-on--after-request="this.reset()">
+					<form id="add-feed" hx-post="/addFeed" hx-target="next ul" hx-swap="beforeend" hx-on--after-request="this.reset()">
 						<input required class="rounded-lg border border-black min-w-80 drop-shadow px-2 py-1 mr-2" type="url" placeholder="Enter an RSS feeed's url" name="inputField">
 						<button class="rounded-lg bg-red-500 text-white px-4 py-1" type="submit">ADD</button>
 					</form>
@@ -67,7 +67,7 @@
 	{{range .Items}}
 		<div hx-swap-oob="beforeend:#incoming-feed">
 			<li class="flex justify-between items-center px-6 py-3 bg-slate-300 rounded-2xl">
-				<h3 class="text-lg max-w-[128] text-ellipsis"><span class="font-bold mr-3">Title:</span>{{.Title}}</h3>
+				<h3 class="text-lg max-w-lg overflow-hidden whitespace-nowrap text-ellipsis"><span class="font-bold mr-3">Title:</span>{{.Title}}</h3>
 				<div class="flex ml-16">
 					{{if .Link}}
 					<a href="{{.Link}}" target="_blank">
@@ -81,6 +81,8 @@
 	{{end}}
 {{end}}
 
+
+
 {{define "feed"}}
 	{{template "li" .}}
 	{{template "items" .}}
@@ -89,5 +91,11 @@
 {{define "delete"}}
 	<div id>
 		
+	</div>
+{{end}}
+
+{{define "error"}}
+	<div hx-swap-oob="beforeend:#add-feed">
+		<p class="text-red-500">{{.Error}}</p>
 	</div>
 {{end}}

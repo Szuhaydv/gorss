@@ -98,6 +98,13 @@ func handleDelete(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleAdd(w http.ResponseWriter, r *http.Request) {
+	tmpl, err := template.ParseFiles("index.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// parse and validate the url
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "Unable to parse form", http.StatusBadRequest)
 		return
@@ -108,11 +115,19 @@ func handleAdd(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	urlString := requestURL.String()
-	tmpl, err := template.ParseFiles("index.html")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+
+	// check if duplicate
+	for _, feed := range myRSSReader.Feeds {
+		if feed.Link == urlString {
+			err = tmpl.ExecuteTemplate(w, "error", struct{ Error string }{Error: "This feed has already been added"})
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
+			// clear the template Error
+			return
+		}
 	}
+
 	// fetch new feed from url
 	newFeed := fetchFeed(urlString)
 
