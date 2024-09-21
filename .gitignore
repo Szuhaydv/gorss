@@ -2,3 +2,4 @@ node_modules/
 output.css
 tmp/
 todo.txt
+.DS_Store

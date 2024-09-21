@@ -43,7 +43,7 @@
 				</div>
 				<div>
 					<h2 class="text-2xl underline">Incoming Feed</h2>
-					<ul class="mt-8 flex flex-col gap-4">
+					<ul id="incoming-feed" class="mt-8 flex flex-col gap-4">
 						{{range .}}
 							{{template "items" .}}
 						{{end}}
@@ -57,7 +57,7 @@
 {{define "li"}}
 <li class="list-item">
 	<div class="flex gap-4">
-		{{.Link}}
+		{{.Title}}
 		<img hx-delete="/deleteFeed/{{.ID}}" hx-trigger="click" hx-swap="outerHTML" hx-target="closest li" class="cursor-pointer max-w-6 max-h-6" src="static/trash.svg" alt="Trash can">	
 	</div>
 </li>
@@ -65,9 +65,23 @@
 
 {{define "items"}}
 	{{range .Items}}
-		<li class="flex justify-between items-center px-6 py-3 bg-slate-300 rounded-2xl">
-			<h3 class="text-lg"><span class="font-bold mr-3">Title:</span>{{.Title}}</h3>
-			<p class="text-slate-600 ml-16">{{.PubDate}}</p>
-		</li>
+		<div hx-swap-oob="beforeend:#incoming-feed">
+			<li class="flex justify-between items-center px-6 py-3 bg-slate-300 rounded-2xl">
+				<h3 class="text-lg max-w-[128] text-ellipsis"><span class="font-bold mr-3">Title:</span>{{.Title}}</h3>
+				<div class="flex ml-16">
+					{{if .Link}}
+					<a href="{{.Link}}" target="_blank">
+						<img class="cursor-pointer max-w-6 max-h-6 mr-2" src="static/link.svg" alt="Link icon">
+					</a>
+					{{end}}
+					<p class="text-slate-600">{{.PubDate}}</p>
+				</div>
+			</li>
+		</div>
 	{{end}}
+{{end}}
+
+{{define "feed"}}
+	{{template "li" .}}
+	{{template "items" .}}
 {{end}}

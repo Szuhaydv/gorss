@@ -12,8 +12,9 @@ import (
 
 type RSSFeed struct {
 	Items []RSSItem `xml:"channel>item"`
-	Link  string    `xml:"channel>link"`
+	Title string    `xml:"channel>title"`
 	ID    uuid.UUID
+	Link  string
 }
 
 type RSSItem struct {
@@ -22,33 +23,30 @@ type RSSItem struct {
 	PubDate string `xml:"pubDate"`
 }
 
-func fetchFeed(url string, myFeed *RSSFeed) {
+func fetchFeed(url string) RSSFeed {
 
-	// GET the RSS feed (in this case Lorem RSS)
+	// GET the XML from the provided URL
 	resp, err := http.Get(url)
 	if err != nil {
 		fmt.Println("Error getting site")
 	}
 	defer resp.Body.Close()
 
-	// Read response body into memory
+	// Read response body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("Error reading response body")
 	}
 
-	// parse the RSS
+	// parse the RSS schema
 	var newFeed RSSFeed
 	if err := xml.Unmarshal(body, &newFeed); err != nil {
 		fmt.Println("Failed to parse RSS feed")
 	}
-	*myFeed = newFeed
+	return newFeed
 }
 
-func handlerFunc(w http.ResponseWriter, r *http.Request) {
-	for i, feed := range myRSSReader.Feeds {
-		fetchFeed(feed.Link, &myRSSReader.Feeds[i])
-	}
+func handleHome(w http.ResponseWriter, r *http.Request) {
 
 	tmpl, err := template.ParseFiles("index.html")
 	if err != nil {
@@ -96,31 +94,35 @@ func handleAdd(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	err = tmpl.ExecuteTemplate(w, "li", RSSFeed{Link: urlString, ID: uuid.New()})
+	// fetch new feed from url
+	newFeed := fetchFeed(urlString)
+
+	// attach an ID and the link to our new value
+	newFeed.ID = uuid.New()
+	newFeed.Link = urlString
+
+	// update state of truth (attach ID & link to newFeed)
+	myRSSReader.Feeds = append(myRSSReader.Feeds, newFeed)
+
+	// send back HTML
+	err = tmpl.ExecuteTemplate(w, "feed", newFeed)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	myRSSReader.Feeds = append(myRSSReader.Feeds, RSSFeed{Link: urlString, ID: uuid.New()})
 }
 
 type RSSReader struct {
 	Feeds []RSSFeed
 }
 
-func createReader() (RSSReader, error) {
-	return RSSReader{Feeds: []RSSFeed{
-		{Link: "https://lorem-rss.herokuapp.com/feed?unit=second&interval=30"},
-	}}, nil
-}
-
-var myRSSReader, _ = createReader()
+var myRSSReader = RSSReader{}
 
 func main() {
 	router := http.NewServeMux()
 	router.Handle("GET /static/", http.StripPrefix("/static", http.FileServer(http.Dir("./static"))))
 	router.HandleFunc("POST /addFeed", handleAdd)
 	router.HandleFunc("DELETE /deleteFeed/{id}", handleDelete)
-	router.HandleFunc("GET /{$}", handlerFunc)
+	router.HandleFunc("GET /{$}", handleHome)
 	server := http.Server{
 		Addr:    ":8081",
 		Handler: router,
