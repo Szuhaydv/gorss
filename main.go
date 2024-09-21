@@ -60,12 +60,15 @@ func handleHome(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleDelete(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte(""))
+
+	// Parse the ID of the feed requested for deletion
 	requestedID, err := uuid.Parse(r.PathValue("id"))
 	if err != nil {
 		http.Error(w, "Unable to parse form", http.StatusBadRequest)
 		return
 	}
+
+	// Search the ID in our data
 	index := -1
 	for i, v := range myRSSReader.Feeds {
 		if v.ID == requestedID {
@@ -73,8 +76,24 @@ func handleDelete(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 	}
+
+	// If found
 	if index != -1 {
+		// Remove it from our data
 		myRSSReader.Feeds = append(myRSSReader.Feeds[:index], myRSSReader.Feeds[index+1:]...)
+		// Send back the new HTML feed
+		tmpl, err := template.ParseFiles("index.html")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		err = tmpl.ExecuteTemplate(w, "index", myRSSReader.Feeds)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	} else {
+		// If not found, send back an error
+		http.Error(w, "Item with requested ID not found", http.StatusBadRequest)
 	}
 }
 

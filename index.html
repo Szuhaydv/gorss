@@ -58,7 +58,7 @@
 <li class="list-item">
 	<div class="flex gap-4">
 		{{.Title}}
-		<img hx-delete="/deleteFeed/{{.ID}}" hx-trigger="click" hx-swap="outerHTML" hx-target="closest li" class="cursor-pointer max-w-6 max-h-6" src="static/trash.svg" alt="Trash can">	
+		<img hx-delete="/deleteFeed/{{.ID}}" hx-trigger="click" hx-target="body" class="cursor-pointer max-w-6 max-h-6" src="static/trash.svg" alt="Trash can">	
 	</div>
 </li>
 {{end}}
@@ -84,4 +84,10 @@
 {{define "feed"}}
 	{{template "li" .}}
 	{{template "items" .}}
+{{end}}
+
+{{define "delete"}}
+	<div id>
+		
+	</div>
 {{end}}
