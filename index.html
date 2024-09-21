@@ -45,7 +45,9 @@
 					<h2 class="text-2xl underline">Incoming Feed</h2>
 					<ul id="incoming-feed" class="mt-8 flex flex-col gap-4">
 						{{range .}}
-							{{template "items" .}}
+							{{range .Items}}
+								{{template "item" .}}
+							{{end}}
 						{{end}}
 					</ul>
 				</div>
@@ -66,22 +68,24 @@
 {{define "items"}}
 	{{range .Items}}
 		<div hx-swap-oob="beforeend:#incoming-feed">
-			<li class="flex justify-between items-center px-6 py-3 bg-slate-300 rounded-2xl">
-				<h3 class="text-lg max-w-lg overflow-hidden whitespace-nowrap text-ellipsis"><span class="font-bold mr-3">Title:</span>{{.Title}}</h3>
-				<div class="flex ml-16">
-					{{if .Link}}
-					<a href="{{.Link}}" target="_blank">
-						<img class="cursor-pointer max-w-6 max-h-6 mr-2" src="static/link.svg" alt="Link icon">
-					</a>
-					{{end}}
-					<p class="text-slate-600">{{.PubDate}}</p>
-				</div>
-			</li>
+		{{template "item" .}}
 		</div>
 	{{end}}
 {{end}}
 
-
+{{define "item"}}
+	<li class="flex justify-between items-center px-6 py-3 bg-slate-300 rounded-2xl">
+		<h3 class="text-lg max-w-lg overflow-hidden whitespace-nowrap text-ellipsis"><span class="font-bold mr-3">Title:</span>{{.Title}}</h3>
+		<div class="flex ml-16">
+			{{if .Link}}
+			<a href="{{.Link}}" target="_blank">
+				<img class="cursor-pointer max-w-6 max-h-6 mr-2" src="static/link.svg" alt="Link icon">
+			</a>
+			{{end}}
+			<p class="text-slate-600">{{.PubDate}}</p>
+		</div>
+	</li>
+{{end}}
 
 {{define "feed"}}
 	{{template "li" .}}
