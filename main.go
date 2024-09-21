@@ -7,18 +7,19 @@ import (
 	"html/template"
 	"io"
 	"net/http"
+	"net/url"
 )
 
 type RSSFeed struct {
 	Items []RSSItem `xml:"channel>item"`
-	Link  string
+	Link  *url.URL  `xml:"link"`
 	ID    uuid.UUID
 }
 
 type RSSItem struct {
-	Title   string `xml:"title"`
-	Link    string `xml:"link"`
-	PubDate string `xml:"pubDate"`
+	Title   string   `xml:"title"`
+	Link    *url.URL `xml:"link"`
+	PubDate string   `xml:"pubDate"`
 }
 
 func handlerFunc(w http.ResponseWriter, r *http.Request) {
@@ -27,7 +28,7 @@ func handlerFunc(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	err = tmpl.Execute(w, myRSSReader.Feeds)
+	err = tmpl.ExecuteTemplate(w, "index", myRSSReader.Feeds)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -57,16 +58,21 @@ func handleAdd(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unable to parse form", http.StatusBadRequest)
 		return
 	}
-	tmpl, err := template.ParseFiles("li.html")
+	requestURL, err := url.ParseRequestURI(r.FormValue("inputField"))
+	if err != nil {
+		http.Error(w, "Not a valid url", http.StatusBadRequest)
+		return
+	}
+	tmpl, err := template.ParseFiles("index.html")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	err = tmpl.Execute(w, RSSFeed{Link: r.FormValue("inputField"), ID: uuid.New()})
+	err = tmpl.ExecuteTemplate(w, "li", RSSFeed{Link: requestURL, ID: uuid.New()})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	myRSSReader.Feeds = append(myRSSReader.Feeds, RSSFeed{Link: r.FormValue("inputField"), ID: uuid.New()})
+	myRSSReader.Feeds = append(myRSSReader.Feeds, RSSFeed{Link: requestURL, ID: uuid.New()})
 }
 
 type RSSReader struct {
