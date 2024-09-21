@@ -43,7 +43,7 @@
 				</div>
 				<div>
 					<h2 class="text-2xl underline">Incoming Feed</h2>
-					<ul class="mt-8">
+					<ul class="mt-8 flex flex-col gap-4">
 						{{range .}}
 							{{template "items" .}}
 						{{end}}

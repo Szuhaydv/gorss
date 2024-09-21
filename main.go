@@ -12,17 +12,44 @@ import (
 
 type RSSFeed struct {
 	Items []RSSItem `xml:"channel>item"`
-	Link  *url.URL  `xml:"link"`
+	Link  string    `xml:"channel>link"`
 	ID    uuid.UUID
 }
 
 type RSSItem struct {
-	Title   string   `xml:"title"`
-	Link    *url.URL `xml:"link"`
-	PubDate string   `xml:"pubDate"`
+	Title   string `xml:"title"`
+	Link    string `xml:"link"`
+	PubDate string `xml:"pubDate"`
+}
+
+func fetchFeed(url string, myFeed *RSSFeed) {
+
+	// GET the RSS feed (in this case Lorem RSS)
+	resp, err := http.Get(url)
+	if err != nil {
+		fmt.Println("Error getting site")
+	}
+	defer resp.Body.Close()
+
+	// Read response body into memory
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("Error reading response body")
+	}
+
+	// parse the RSS
+	var newFeed RSSFeed
+	if err := xml.Unmarshal(body, &newFeed); err != nil {
+		fmt.Println("Failed to parse RSS feed")
+	}
+	*myFeed = newFeed
 }
 
 func handlerFunc(w http.ResponseWriter, r *http.Request) {
+	for i, feed := range myRSSReader.Feeds {
+		fetchFeed(feed.Link, &myRSSReader.Feeds[i])
+	}
+
 	tmpl, err := template.ParseFiles("index.html")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -63,58 +90,41 @@ func handleAdd(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Not a valid url", http.StatusBadRequest)
 		return
 	}
+	urlString := requestURL.String()
 	tmpl, err := template.ParseFiles("index.html")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	err = tmpl.ExecuteTemplate(w, "li", RSSFeed{Link: requestURL, ID: uuid.New()})
+	err = tmpl.ExecuteTemplate(w, "li", RSSFeed{Link: urlString, ID: uuid.New()})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	myRSSReader.Feeds = append(myRSSReader.Feeds, RSSFeed{Link: requestURL, ID: uuid.New()})
+	myRSSReader.Feeds = append(myRSSReader.Feeds, RSSFeed{Link: urlString, ID: uuid.New()})
 }
 
 type RSSReader struct {
 	Feeds []RSSFeed
 }
 
-var sampleURL, err = url.Parse("https://www.test.com")
+func createReader() (RSSReader, error) {
+	return RSSReader{Feeds: []RSSFeed{
+		{Link: "https://lorem-rss.herokuapp.com/feed?unit=second&interval=30"},
+	}}, nil
+}
 
-var myRSSReader = RSSReader{Feeds: []RSSFeed{{Link: sampleURL, Items: []RSSItem{{Title: "Something cool is happenning", PubDate: "2024-01-29"}}}}}
+var myRSSReader, _ = createReader()
 
 func main() {
-	baseUrl := "https://lorem-rss.herokuapp.com/feed?unit=second&interval=30"
-
 	router := http.NewServeMux()
-	router.Handle("/static/", http.StripPrefix("/static", http.FileServer(http.Dir("./static"))))
-	router.HandleFunc("/", handlerFunc)
-	router.HandleFunc("/addFeed", handleAdd)
-	router.HandleFunc("/deleteFeed/{id}", handleDelete)
+	router.Handle("GET /static/", http.StripPrefix("/static", http.FileServer(http.Dir("./static"))))
+	router.HandleFunc("POST /addFeed", handleAdd)
+	router.HandleFunc("DELETE /deleteFeed/{id}", handleDelete)
+	router.HandleFunc("GET /{$}", handlerFunc)
 	server := http.Server{
 		Addr:    ":8081",
 		Handler: router,
 	}
 	fmt.Println("Server listening...")
 	server.ListenAndServe()
-
-	// GET the RSS feed (in this case Lorem RSS)
-	resp, err := http.Get(baseUrl)
-	if err != nil {
-		fmt.Println("Error getting site", baseUrl)
-	}
-	defer resp.Body.Close()
-
-	// Read response body into memory
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println("Error reading response body")
-	}
-
-	// parse the RSS
-	var feed RSSFeed
-	if err := xml.Unmarshal(body, &feed); err != nil {
-		fmt.Println("Failed to parse RSS feed")
-	}
-	fmt.Println(feed)
 }
