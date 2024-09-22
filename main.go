@@ -46,6 +46,33 @@ func fetchFeed(url string) RSSFeed {
 	return newFeed
 }
 
+func handlePolling(w http.ResponseWriter, r *http.Request) {
+
+	hashMap := make(map[string]bool)
+	for i, feed := range myRSSReader.Feeds {
+		// collect each new feed
+		newFeed := fetchFeed(feed.Link)
+		// populate hashmap for efficieny
+		for _, oldItem := range feed.Items {
+			hashMap[oldItem.Title] = true
+		}
+		// diff the new items with the old ones and update data accordingly
+		for _, newItem := range newFeed.Items {
+			if !hashMap[newItem.Title] {
+				myRSSReader.Feeds[i].Items = append(myRSSReader.Feeds[i].Items, newItem)
+			}
+		}
+	}
+	tmpl, err := template.ParseFiles("index.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	err = tmpl.ExecuteTemplate(w, "item-feed", myRSSReader.Feeds)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
 func handleHome(w http.ResponseWriter, r *http.Request) {
 
 	tmpl, err := template.ParseFiles("index.html")
@@ -151,11 +178,20 @@ type RSSReader struct {
 
 var myRSSReader = RSSReader{}
 
+type ConnectionOption int
+
+const (
+	Polling ConnectionOption = iota
+	SSE
+	Websocket
+)
+
 func main() {
 	router := http.NewServeMux()
 	router.Handle("GET /static/", http.StripPrefix("/static", http.FileServer(http.Dir("./static"))))
 	router.HandleFunc("POST /addFeed", handleAdd)
 	router.HandleFunc("DELETE /deleteFeed/{id}", handleDelete)
+	router.HandleFunc("PATCH /handlePolling", handlePolling)
 	router.HandleFunc("GET /{$}", handleHome)
 	server := http.Server{
 		Addr:    ":8081",

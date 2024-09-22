@@ -16,7 +16,7 @@
 			<fieldset class="flex justify-center gap-8 w-max m-auto p-4 border-2 border-zinc-900">
 				<legend>Choose your connection type</legend>
 				<div>
-					<input id="choice1" type="radio" name="connection" value="polling">
+					<input hx-trigger="every 5s" hx-target="#incoming-feed" hx-patch="/handlePolling" id="choice1" type="radio" name="connection" checked value="polling">
 					<label for="choice1">Polling</label>
 				</div>
 				<div>
@@ -102,4 +102,12 @@
 	<div hx-swap-oob="beforeend:#add-feed">
 		<p class="text-red-500">{{.Error}}</p>
 	</div>
+{{end}}
+
+{{define "item-feed"}}
+	{{range .}}
+		{{range .Items}}
+			{{template "item" .}}
+		{{end}}
+	{{end}}
 {{end}}
