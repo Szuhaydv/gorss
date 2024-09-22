@@ -178,14 +178,6 @@ type RSSReader struct {
 
 var myRSSReader = RSSReader{}
 
-type ConnectionOption int
-
-const (
-	Polling ConnectionOption = iota
-	SSE
-	Websocket
-)
-
 func main() {
 	router := http.NewServeMux()
 	router.Handle("GET /static/", http.StripPrefix("/static", http.FileServer(http.Dir("./static"))))
@@ -197,6 +189,13 @@ func main() {
 		Addr:    ":8081",
 		Handler: router,
 	}
+
+	// feed for demo
+	demoFeed := fetchFeed("https://lorem-rss.herokuapp.com/feed?unit=second&length=2")
+	demoFeed.ID = uuid.New()
+	demoFeed.Link = "https://lorem-rss.herokuapp.com/feed?unit=second&length=2"
+	myRSSReader.Feeds = append(myRSSReader.Feeds, demoFeed)
+
 	fmt.Println("Server listening...")
 	server.ListenAndServe()
 }

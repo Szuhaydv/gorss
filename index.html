@@ -12,22 +12,7 @@
 			<script src="https://unpkg.com/htmx.org@2.0.2" defer integrity="sha384-Y7hw+L/jvKeWIRRkqWYfPcvVxHzVzn5REgzbawhxAuQGwX1XWe70vji+VSeHOThJ" crossorigin="anonymous"></script>
 		</head>
 		<body>
-			<h1 class="mb-4 font-grenze text-8xl text-center">RSS Reader</h1>
-			<fieldset class="flex justify-center gap-8 w-max m-auto p-4 border-2 border-zinc-900">
-				<legend>Choose your connection type</legend>
-				<div>
-					<input hx-trigger="every 5s" hx-target="#incoming-feed" hx-patch="/handlePolling" id="choice1" type="radio" name="connection" checked value="polling">
-					<label for="choice1">Polling</label>
-				</div>
-				<div>
-					<input type="radio" name="connection" value="sse">
-					<label for="choice2">SSE</label>
-				</div>
-				<div>
-					<input type="radio" name="connection" value="websocket">
-					<label for="choice3">Websocket</label>
-				</div>
-			</fieldset>
+			<h1 hx-trigger="every 5s" hx-target="#incoming-feed" hx-patch="/handlePolling" class="mb-4 font-grenze text-8xl text-center">RSS Reader</h1>
 			<div class="flex justify-evenly pt-8">
 				<div>
 					<form id="add-feed" hx-post="/addFeed" hx-target="next ul" hx-swap="beforeend" hx-on--after-request="this.reset()">
